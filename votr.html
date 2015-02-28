@@ -1,0 +1,48 @@
+<head>
+  <title>votr</title>
+</head>
+
+<body>
+</body>
+
+
+<template name="CreatePoll">
+  <h1>Welcome to Meteor!</h1>
+
+  <form id='create_poll'>
+	  <label for='poll-name'>Name:</label><input type='text' id='poll-name'>
+	  <input type='submit' id='create-poll-button'>
+	  
+	  {{#each options}}
+	  	  {{>CreatePollOption}}
+	  {{/each}}
+
+  </form>
+  
+</template>
+
+
+<template name='CreatePollOption'>
+	<div class='create_poll_option'>
+		<input type='text' class='poll_option' placeholder='Enter poll option...'>
+	</div>
+</template>
+
+<template name="polls">
+	<div id="polls">
+		{{#each polls}}
+			{{>poll}}
+		{{/each}}
+	</div>
+</template>
+
+<template name="poll">
+	<div class='poll'>
+		name: {{name}}<p class='remove'>X</p>
+	</div>
+</template>
+
+
+<template name="about">
+	ABOUT???
+</template>
