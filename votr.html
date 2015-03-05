@@ -10,8 +10,8 @@
   <h1>Welcome to Meteor!</h1>
 
   <form id='create_poll'>
-	  <label for='poll-name'>Name:</label><input type='text' id='poll-name'>
-	  <input type='submit' id='create-poll-button'>
+	  <label for='poll_name'>Name:</label><input type='text' id='poll_name'>
+	  <input type='submit' id='create_poll_button'>
 	  
 	  {{#each options}}
 	  	  {{>CreatePollOption}}
@@ -38,11 +38,35 @@
 
 <template name="poll">
 	<div class='poll'>
-		name: {{name}}<p class='remove'>X</p>
+		name: {{name}} {{_id}}<p class='remove'>X</p>
 	</div>
 </template>
 
 
 <template name="about">
 	ABOUT???
+</template>
+
+
+
+<template name='PollDetails'>
+	
+	<div>name: {{name}}</div>
+	
+	{{#each PollOptions}}
+		{{>PollOption}}
+	{{/each}}
+	
+	
+</template>
+
+<template name='PollOptions'>
+	SHOW POLL OPTIONS
+	{{#each PollOptions}}
+		{{>PollOption}}
+	{{/each}}
+</template>
+
+<template name='PollOption'>
+	
 </template>
