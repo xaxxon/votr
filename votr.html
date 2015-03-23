@@ -3,7 +3,15 @@
 </head>
 
 <body>
+<a href="{{pathFor 'CreatePoll'}}">Votr</a>
+<a href="{{pathFor 'polls'}}">Polls</a>
+	
+	
 </body>
+
+<template name="test">
+	TEST {{name}}
+</template>
 
 
 <template name="CreatePoll">
@@ -28,17 +36,21 @@
 	</div>
 </template>
 
-<template name="polls">
+
+
+<template name="Polls">
 	<div id="polls">
 		{{#each polls}}
-			{{>poll}}
+			{{>PollSummary}}
 		{{/each}}
 	</div>
 </template>
 
-<template name="poll">
+<template name="PollSummary">
 	<div class='poll'>
-		name: {{name}} {{_id}}<p class='remove'>X</p>
+		<p class='remove'>X</p> name: {{name}} id: {{_id}} 
+		<a href="{{pathFor 'Vote' _id=this._id}}">Vote</a>
+		<a href="{{pathFor 'Results' _id=this._id}}">Results</a>
 	</div>
 </template>
 
@@ -49,24 +61,35 @@
 
 
 
-<template name='PollDetails'>
+<template name='Vote'>
 	
-	<div>name: {{name}}</div>
+	<div>name: {{name}}, id: {{id}}</div>
 	
-	{{#each PollOptions}}
-		{{>PollOption}}
+	<form id='vote'>
+	{{#each poll_options}}
+		{{>VoteOption}}
 	{{/each}}
 	
+	<input type='submit' value='VOTE!'>
+	</form>
 	
 </template>
 
-<template name='PollOptions'>
-	SHOW POLL OPTIONS
-	{{#each PollOptions}}
-		{{>PollOption}}
+<template name='VoteOption'>
+<div>
+	<input type='checkbox' class='option' value={{_id}}>{{value}}
+</div>
+</template>
+
+
+<template name='Results'>
+	<div>name: {{name}}, id: {{id}}</div>
+	
+	{{#each poll_options}}
+		{{>ResultOption}}
 	{{/each}}
 </template>
 
-<template name='PollOption'>
-	
+<template name='ResultOption'>
+	{{value}}: {{votes}}
 </template>
