@@ -88,8 +88,17 @@
 	{{#each poll_options}}
 		{{>ResultOption}}
 	{{/each}}
+	
+	{{>canvas}}
 </template>
 
 <template name='ResultOption'>
 	{{value}}: {{votes}}
+</template>
+
+
+<template name='canvas'>
+	<div class="container">
+		<canvas id="results">Your browser does not support HTML5 Canvas. Please update your browser to the latest version.</canvas>
+	</div>	
 </template>
