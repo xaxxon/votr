@@ -114,24 +114,62 @@ if Meteor.isClient
 				poll_options.update option_id, option
 			console.log template.data
 			Router.go "Results", _id: template.data.id if vote_selected
-			
+		
+		
+		
+	update_results_graph = (cursor)->
+		console.log "Updating results graph"
+		canvas = $("canvas")[0]
+		console.log canvas
+		ctx = canvas.getContext "2d"
+		console.log ctx
+		window.ctx = ctx
+	
+		data_total = cursor.fetch().map((option)->option.votes).reduce (t,s)->t+s
+		console.log "data total " + data_total
+		
+		previous_sum = 0
+		center_x = 50
+		center_y = 50
+		radius = 45
+
+		
+		cursor.forEach (option)->
+			console.log "In foreach"
+			value = option.votes
+			start_percent = previous_sum / data_total
+			finish_percent = (previous_sum + value) / data_total
+
+			start_radians = start_percent * 2 * Math.PI
+			end_radians = finish_percent * 2 * Math.PI
+
+			console.log "start/stop radians: " + start_radians + " : " + end_radians
+
+			ctx.beginPath()
+			ctx.moveTo(center_x, center_y)
+			ctx.arc(center_x, center_y, radius, start_radians, end_radians)
+			ctx.closePath()
+
+			ctx.fillStyle = '#'+Math.floor(Math.random()*16777215).toString(16)
+			ctx.fill()
+
+
+			ctx.lineWidth = 3;
+			# ctx.strokeStyle = '#'+Math.floor(Math.random()*16777215).toString(16)
+			ctx.stroke()
+
+
+			previous_sum += value
+	
+		
 					
 	Template.canvas.rendered = ->
 		
-		
+		update_results_graph poll_options.find()
 		poll_options.find().observe
 			changed: ->
-				poll_options.find().forEach (option)->
-					console.log option.value + " now with " + option.votes + " votes"
-				
+				update_results_graph poll_options.find()
 		
-		#
-		#
-		# canvas = $("canvas")[0]
-		# console.log canvas
-		# ctx = canvas.getContext "2d"
-		# console.log ctx
-		# window.ctx = ctx
 		#
 		# data = [10,2,15,5]
 		#
@@ -144,30 +182,7 @@ if Meteor.isClient
 		#
 		# for value in data
 		#
-		# 		start_percent = previous_sum / data_total
-		# 		finish_percent = (previous_sum + value) / data_total
-		#
-		# 		start_radians = start_percent * 2 * Math.PI
-		# 		end_radians = finish_percent * 2 * Math.PI
-		#
-		# 		console.log "start/stop radians: " + start_radians + " : " + end_radians
-		#
-		# 		ctx.beginPath()
-		# 		ctx.moveTo(center_x, center_y)
-		# 		ctx.arc(center_x, center_y, radius, start_radians, end_radians)
-		# 		ctx.closePath()
-		#
-		# 		ctx.fillStyle = '#'+Math.floor(Math.random()*16777215).toString(16)
-		# 		ctx.fill()
-		#
-		#
-		# 		ctx.lineWidth = 3;
-		# 		# ctx.strokeStyle = '#'+Math.floor(Math.random()*16777215).toString(16)
-		# 		ctx.stroke()
-		#
-		#
-		# 		previous_sum += value
-		#			
+
 		
 					
 	# Template.PollOptions.helpers
