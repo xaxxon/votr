@@ -3,6 +3,7 @@
 </head>
 
 <body>
+<h1 class='title'>VOTR</h1>
 <a href="{{pathFor 'CreatePoll'}}">Votr</a>
 <a href="{{pathFor 'Polls'}}">Polls</a>
 	
@@ -19,15 +20,30 @@
 
   <form id='create_poll'>
 	  <label for='poll_name'>Name:</label><input type='text' id='poll_name'>
-	  <input type='submit' id='create_poll_button'>
 	  
 	  {{#each options}}
 	  	  {{>CreatePollOption}}
 	  {{/each}}
 
+	  <div id='poll_parameters'>
+		  <input type='checkbox' id='allow_multiple_selections'><label for='allow_multiple_selections'>Allow multiple selections? (nonfunctional)</label>
+	  </div>
+	  <div>
+		  <input type='submit' id='create_poll_button'>
+	  </div>
+
   </form>
   
+  
+	<div id='poll_created' class='overlay'>
+		<div class='message centered'>
+		    Poll created <a href='{{poll_link}}'>{{poll_link}}</a>
+		</div>
+	</div>
+  
+  
 </template>
+
 
 
 <template name='CreatePollOption'>

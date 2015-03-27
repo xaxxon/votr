@@ -15,7 +15,6 @@ Router.map ->
 		path: "/vote/:_id"
 		loadingTemplate: "about"
 		waitOn: ->
-			console.log "In waiton" + Meteor.subscribe("polls").ready()
 			[Meteor.subscribe("poll", this.params._id), Meteor.subscribe("poll_options", this.params._id)]
 		data: ->		
 			if this.ready()	
@@ -55,7 +54,9 @@ if Meteor.isClient
 	new_poll_options = new Meteor.Collection(null)
 	new_poll_options.insert(blank: true) for x in [0...NEW_POLL_DEFAULT_OPTIONS]
 
-	Template.CreatePoll.helpers options: new_poll_options.find()
+	Template.CreatePoll.helpers 
+		options: -> new_poll_options.find()
+		poll_link: -> Router.path "Vote", _id: Session.get "poll_id" 
 
 	Template.CreatePoll.events
 		"submit #create_poll": (event)->
@@ -63,6 +64,7 @@ if Meteor.isClient
 			
 			poll_name = $("#poll_name").val()
 			new_poll_id = polls.insert name: poll_name
+			Session.set "poll_id", new_poll_id
 			
 			new_poll_options.find().forEach	do (new_poll_id) ->
 				(thing) ->
@@ -73,7 +75,9 @@ if Meteor.isClient
 							votes: 0
 			
 			new_poll_options.find().forEach (option)-> new_poll_options.remove option._id
-			new_poll_options.insert(blank: true) for x in [0...NEW_POLL_DEFAULT_OPTIONS] # copied code from above - move to function						
+			new_poll_options.insert(blank: true) for x in [0...NEW_POLL_DEFAULT_OPTIONS] # copied code from above - move to function			
+			
+			$("#poll_created").toggle()			
 					
 
 	Template.CreatePollOption.events
@@ -107,7 +111,6 @@ if Meteor.isClient
 				votes = option['votes'] or 0
 				option['votes'] = votes + 1
 				poll_options.update option_id, option
-			console.log template.data
 			Router.go "Results", _id: template.data.id if vote_selected
 		
 		
@@ -118,7 +121,6 @@ if Meteor.isClient
 		window.ctx = ctx
 	
 		data_total = cursor.fetch().map((option)->option.votes).reduce (t,s)->t+s
-		console.log "data total " + data_total
 		
 		previous_sum = 0
 		
@@ -131,7 +133,6 @@ if Meteor.isClient
 		# skip options with no votes so it doesn't draw radius lines for them
 		for option in cursor.fetch() when option.votes != 0
 
-			console.log "In foreach"
 			value = option.votes
 			# if value == 0 then continue
 			
@@ -141,15 +142,11 @@ if Meteor.isClient
 			start_radians = start_percent * 2 * Math.PI
 			end_radians = finish_percent * 2 * Math.PI
 
-			console.log "start/stop radians: " + start_radians + " : " + end_radians
-
 			ctx.beginPath()
 			# if there's only one option, don't draw radius lines, just a full circle
 			if value == data_total
-				console.log "Full circle"
 				ctx.moveTo(center_x + radius, center_y)
 			else
-				console.log 'partial circle ' + value + " / " + data_total
 				ctx.moveTo(center_x, center_y)
 				
 			ctx.arc(center_x, center_y, radius, start_radians, end_radians)
@@ -185,7 +182,6 @@ if Meteor.isServer
 		
 	# get a single poll
 	Meteor.publish "poll", (poll_id)->
-		console.log poll_id
 		polls.find(poll_id)
 		
 	# get all poll options for a single poll
