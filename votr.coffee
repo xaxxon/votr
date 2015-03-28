@@ -10,28 +10,39 @@ Router.map ->
 	this.route "CreatePoll", path: "/" # default landing page is for creating a new poll
 	this.route "Polls", # list all the polls
 		waitOn: ->
-			Meteor.subscribe "polls"
+			Meteor.subscribe "mypolls", Meteor.userId()
 	this.route "Vote", # show details about a single poll
 		path: "/vote/:_id"
-		loadingTemplate: "about"
+		loadingTemplate: "loading"
 		waitOn: ->
-			[Meteor.subscribe("poll", this.params._id), Meteor.subscribe("poll_options", this.params._id)]
-		data: ->		
-			if this.ready()	
+			[Meteor.subscribe("poll", this.params._id), Meteor.subscribe("poll_options", this.params._id), Meteor.subscribe("users")]
+		data: ->
+			if this.ready()
+				poll = polls.findOne(this.params._id)				
 				id: this.params._id
-				poll_options: poll_options.find(poll: this.params._id) 
-				name: polls.findOne(this.params._id).name
+				poll_options: poll_options.find(poll: this.params._id)
+				poll: poll
+				username: Meteor.users.findOne(poll.user_id)?.username or "anonymous"
+			else
+				console.log "results data not ready"
+			
 
 	this.route "Results",
 		path: "/results/:_id"
-		waitOn: -> 
-			[Meteor.subscribe("poll", this.params._id), Meteor.subscribe("poll_options", this.params._id)]
-		data: ->			
+		loadingTemplate: "loading"
+		waitOn: ->
+			[Meteor.subscribe("poll", this.params._id), Meteor.subscribe("poll_options", this.params._id), Meteor.subscribe("users")]
+		data: ->
 			if this.ready()
+				console.log "results data ready"
+				poll = polls.findOne(this.params._id)
+				
 				id: this.params._id
-				poll_options: poll_options.find(poll: this.params._id) 
-				name: polls.findOne(this.params._id).name
-		
+				poll_options: poll_options.find(poll: this.params._id)
+				poll: poll
+				username: Meteor.users.findOne(poll.user_id)?.username or "anonymous"
+			else
+				console.log "results data not ready"
 
 if Meteor.isClient
 
@@ -39,10 +50,12 @@ if Meteor.isClient
 	# because coffeescript hides variables outside their scope
 	window.polls = polls
 	window.poll_options = poll_options
+	window.users = Meteor.users
 
 
 	Template.Polls.helpers
 		polls: polls.find()
+		empty_poll_list: polls.find().count() == 0
 		
 	Template.PollSummary.events
 		"click .remove": -> polls.remove @_id if confirm "This poll is about to be deleted"
@@ -56,14 +69,21 @@ if Meteor.isClient
 
 	Template.CreatePoll.helpers 
 		options: -> new_poll_options.find()
-		poll_link: -> Router.path "Vote", _id: Session.get "poll_id" 
+		poll_link: -> Router.path "Vote", _id: Session.get "poll_id"
 
 	Template.CreatePoll.events
 		"submit #create_poll": (event)->
 			event.preventDefault()
 			
 			poll_name = $("#poll_name").val()
-			new_poll_id = polls.insert name: poll_name
+			console.log Meteor.userId()
+			
+			# Insert new poll
+			console.log "user_id of new poll set to: " + Meteor.userId()
+			new_poll_id = polls.insert 
+				name: poll_name
+				user_id: Meteor.userId()
+				
 			Session.set "poll_id", new_poll_id
 			
 			new_poll_options.find().forEach	do (new_poll_id) ->
@@ -104,6 +124,7 @@ if Meteor.isClient
 				return 
 			
 			vote_selected = false
+			console.log "HERE"
 			selected_options.each (index, option)->
 				vote_selected = true
 				option_id = $(option).val()
@@ -111,10 +132,11 @@ if Meteor.isClient
 				votes = option['votes'] or 0
 				option['votes'] = votes + 1
 				poll_options.update option_id, option
+			console.log "Template data id: " + template.data.id
 			Router.go "Results", _id: template.data.id if vote_selected
 		
 		
-		
+	# update pie chart with contents of cursor parameter f
 	update_results_graph = (cursor)->
 		canvas = $("canvas")[0]
 		ctx = canvas.getContext "2d"
@@ -164,21 +186,28 @@ if Meteor.isClient
 			previous_sum += value
 	
 		
-					
+	# set up a callback when the canvas template is rendered to keep pie chart up-to-date	
 	Template.canvas.rendered = ->
 		
 		update_results_graph poll_options.find()
+		# when poll_options change, update the pie chart
 		poll_options.find().observe
 			changed: ->
 				update_results_graph poll_options.find()
 		
-
+	# boilerplate to use username instead of email
+	Accounts.ui.config
+	  passwordSignupFields: "USERNAME_ONLY"
+	
 
 if Meteor.isServer
 	
 	# get all polls
 	Meteor.publish "polls", ->
 		polls.find()
+		
+	Meteor.publish "mypolls", (user_id)->
+		polls.find(user_id: user_id)
 		
 	# get a single poll
 	Meteor.publish "poll", (poll_id)->
@@ -187,6 +216,9 @@ if Meteor.isServer
 	# get all poll options for a single poll
 	Meteor.publish "poll_options", (poll_id)->
 		poll_options.find(poll: poll_id)
+		
+	Meteor.publish "users", ->
+		Meteor.users.find()
 	
 	Meteor.startup ->
 		

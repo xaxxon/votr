@@ -31,7 +31,7 @@ canvas.results {
 .title {
     font-size: 59px;
     font-family: 'Sigmar One',sans-serif;
-	
+	float: left;
 }
 
 .overlay {
@@ -60,4 +60,17 @@ canvas.results {
 	color: purple;
 	background-color: white;
 	padding: 20px;
+}
+
+#login {
+	float: left;
+}
+
+#menubar {
+	clear: both;
+}
+
+.menu_option {
+	float: left;
+	padding-right: 10px;
 }

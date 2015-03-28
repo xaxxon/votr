@@ -5,8 +5,10 @@
 # but you can also edit it by hand.
 
 meteor-platform
-insecure
 coffeescript
 jquery
 fourseven:scss
 iron:router
+insecure
+accounts-ui
+accounts-password

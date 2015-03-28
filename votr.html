@@ -4,46 +4,50 @@
 
 <body>
 <h1 class='title'>VOTR</h1>
-<a href="{{pathFor 'CreatePoll'}}">Votr</a>
-<a href="{{pathFor 'Polls'}}">Polls</a>
-	
-	
-</body>
 
-<template name="test">
-	TEST {{name}}
-</template>
+<div id='login'>
+	{{> loginButtons}}
+</div>
+
+<div id='menubar'>
+	<div class='menu_option'>
+		<a href="{{pathFor 'CreatePoll'}}">Votr</a>
+	</div>
+	<div class='menu_option'>
+		<a href="{{pathFor 'Polls'}}">Polls</a>
+	</div>
+</div>
+
+
+</body>
 
 
 <template name="CreatePoll">
-  <h1>Create a new poll</h1>
+	<h1>Create a new poll</h1>
 
-  <form id='create_poll'>
-	  <label for='poll_name'>Name:</label><input type='text' id='poll_name'>
-	  
-	  {{#each options}}
-	  	  {{>CreatePollOption}}
-	  {{/each}}
+	<form id='create_poll'>
+		<label for='poll_name'>Name:</label><input type='text' id='poll_name'>
 
-	  <div id='poll_parameters'>
-		  <input type='checkbox' id='allow_multiple_selections'><label for='allow_multiple_selections'>Allow multiple selections? (nonfunctional)</label>
-	  </div>
-	  <div>
-		  <input type='submit' id='create_poll_button'>
-	  </div>
+		{{#each options}}
+			{{>CreatePollOption}}
+		{{/each}}
 
-  </form>
-  
-  
+		<div id='poll_parameters'>
+			<input type='checkbox' id='allow_multiple_selections'><label for='allow_multiple_selections'>Allow multiple selections? (nonfunctional)</label>
+		</div>
+		<div>
+			<input type='submit' id='create_poll_button'>
+		</div>
+
+	</form>
+
 	<div id='poll_created' class='overlay'>
 		<div class='message centered'>
 		    Poll created <a href='{{poll_link}}'>{{poll_link}}</a>
 		</div>
 	</div>
-  
-  
-</template>
 
+</template>
 
 
 <template name='CreatePollOption'>
@@ -53,33 +57,37 @@
 </template>
 
 
-
 <template name="Polls">
+	
+	<h1>
+		Your polls
+	</h1>
+	
 	<div id="polls">
-		{{#each polls}}
-			{{>PollSummary}}
-		{{/each}}
+		{{#if empty_poll_list}}
+			You don't currently have any polls
+			<a href='{{pathFor 'CreatePoll'}}'>Create a new poll</a>
+		{{else}}
+			POLL LIST
+			{{#each polls}}
+				{{>PollSummary}}
+			{{/each}}
+		{{/if}}
 	</div>
 </template>
 
 <template name="PollSummary">
 	<div class='poll'>
-		<p class='remove'>X</p> name: {{name}} id: {{_id}} 
+		<p class='remove'>X</p> name: {{name}} votes: {{total_votes}}
 		<a href="{{pathFor 'Vote' _id=this._id}}">Vote</a>
 		<a href="{{pathFor 'Results' _id=this._id}}">Results</a>
 	</div>
 </template>
 
 
-<template name="about">
-	ABOUT???
-</template>
-
-
-
 <template name='Vote'>
 	
-	<div>name: {{name}}, id: {{id}}</div>
+	<div>name: {{poll.name}}, id: {{id}} user: {{poll.user_id}} name: {{username}}</div>
 	
 	<form id='vote'>
 	{{#each poll_options}}
@@ -99,7 +107,7 @@
 
 
 <template name='Results'>
-	<div>name: {{name}}, id: {{id}}</div>
+	<div>name: {{poll.name}}, id: {{id}} user: {{poll.user_id}}</div>
 	
 	{{#each poll_options}}
 		{{>ResultOption}}
@@ -107,6 +115,7 @@
 	
 	{{>canvas}}
 </template>
+
 
 <template name='ResultOption'>
 	{{value}}: {{votes}}
@@ -117,4 +126,12 @@
 	<div class="container">
 		<canvas id="results">Your browser does not support HTML5 Canvas. Please update your browser to the latest version.</canvas>
 	</div>	
+</template>
+
+<template name='loading'>
+	<div class='overlay'>
+		<div class='message centered'>
+		    Loading
+		</div>
+	</div>
 </template>
