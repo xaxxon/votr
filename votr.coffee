@@ -10,7 +10,7 @@ Router.map ->
 	this.route "CreatePoll", path: "/" # default landing page is for creating a new poll
 	this.route "Polls", # list all the polls
 		waitOn: ->
-			Meteor.subscribe "mypolls", Meteor.userId()
+			Meteor.subscribe "polls"
 	this.route "Vote", # show details about a single poll
 		path: "/vote/:_id"
 		loadingTemplate: "loading"
@@ -54,7 +54,10 @@ if Meteor.isClient
 		empty_poll_list: -> polls.find().count() == 0
 		
 	Template.PollSummary.events
-		"click .remove": -> polls.remove @_id if confirm "This poll is about to be deleted"
+		"click .remove": -> Meteor.call "remove_poll", {id: @_id} if confirm "This poll is about to be deleted"
+		
+		
+		# polls.remove @_id if confirm "This poll is about to be deleted"
 
 
 	# This code should be moved into something that only happens when showing the template
@@ -209,15 +212,28 @@ Meteor.methods
 			{$inc: {votes: 1}},
 			{multi: true}
 		
+	remove_poll: (poll)->
+		id = poll.id
+		@poll = polls.findOne(poll.id) 
+		@god = Meteor.users.findOne(@userId).god
+		
+		# check to make sure the user either owns the poll or is god
+		polls.remove(id) if @userId = @poll.owner or @userId or @god
+
+
 
 if Meteor.isServer
-	
-	# get all polls
+			
+	isGod = (user_id)->
+		Meteor.users.findOne(user_id)?.god
+			
+	# retrieve a user's polls or all polls if god - not for security, just for convenience
+	#   since anyone is allowed to vote on any poll
 	Meteor.publish "polls", ->
-		polls.find()
-		
-	Meteor.publish "mypolls", (user_id)->
-		polls.find(user_id: user_id)
+		if isGod @userId
+			polls.find()
+		else
+			polls.find(user_id: @userId) 
 		
 	# get a single poll
 	Meteor.publish "poll", (poll_id)->
