@@ -3,7 +3,8 @@
 NEW_POLL_DEFAULT_OPTIONS = 4
 
 polls = new Mongo.Collection "polls"
-poll_options_collection = new Mongo.Collection "poll options"
+poll_options_collection = new Mongo.Collection "poll_options"
+
 
 
 Router.map ->
@@ -249,4 +250,11 @@ if Meteor.isServer
 	Meteor.startup ->
 		Meteor.users.update {username: 'xaxxon'}, {$set: {god: true}}
 			
-    	
+
+	polls.before.insert (userId, doc)->
+	  doc.createdAt = Date.now()
+	  
+  	poll_options_collection.before.insert (userId, doc)->
+  	  doc.createdAt = Date.now()
+	  
+
