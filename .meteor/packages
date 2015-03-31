@@ -9,6 +9,5 @@ coffeescript
 jquery
 fourseven:scss
 iron:router
-insecure
 accounts-ui
 accounts-password

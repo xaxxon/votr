@@ -3,7 +3,7 @@
 NEW_POLL_DEFAULT_OPTIONS = 4
 
 polls = new Mongo.Collection "polls"
-poll_options = new Mongo.Collection "poll options"
+poll_options_collection = new Mongo.Collection "poll options"
 
 
 Router.map ->
@@ -18,8 +18,10 @@ Router.map ->
 			[Meteor.subscribe("poll", this.params._id), Meteor.subscribe("poll_options", this.params._id), Meteor.subscribe("users")]
 		data: ->
 			if this.ready()
-				poll = polls.findOne(this.params._id)			
-				poll_options: poll_options.find(poll: this.params._id)
+				poll = polls.findOne(this.params._id)
+				
+				# => needed to maintain 'this'
+				poll_options: => poll_options_collection.find(poll: this.params._id)
 				poll: -> poll
 				username: -> Meteor.users.findOne(poll.user_id)?.username or "anonymous"
 
@@ -29,10 +31,12 @@ Router.map ->
 		waitOn: ->
 			[Meteor.subscribe("poll", this.params._id), Meteor.subscribe("poll_options", this.params._id), Meteor.subscribe("users")]
 		data: ->
-			if this.ready()
+			if this.ready
 				poll = polls.findOne(this.params._id)
+
+				# => needed to maintain 'this'
+				poll_options: => poll_options_collection.find poll: this.params._id
 				poll: -> poll
-				poll_options: -> poll_options.find(poll: this.params._id)
 				username: -> Meteor.users.findOne(poll.user_id)?.username or "anonymous"
 
 if Meteor.isClient
@@ -40,7 +44,7 @@ if Meteor.isClient
 	# make it so the database handles are available in the browser console
 	# because coffeescript hides variables outside their scope
 	window.polls = polls
-	window.poll_options = poll_options
+	window.poll_options = poll_options_collection
 	window.users = Meteor.users
 
 
@@ -69,26 +73,18 @@ if Meteor.isClient
 			
 			poll_name = $("#poll_name").val()
 			
-			# Insert new poll
-			new_poll_id = polls.insert 
-				name: poll_name
-				user_id: Meteor.userId()
+			options = ({value: option.value} for option in new_poll_options.find().fetch())
 				
-			Session.set "poll_id", new_poll_id
-			
-			new_poll_options.find().forEach	do (new_poll_id) ->
-				(thing) ->
-					unless thing["blank"]
-						poll_options.insert 
-							poll: new_poll_id
-							value: thing['value'] 
-							votes: 0
-			
+			Meteor.call "create_poll", poll_name, options, (error, result)->
+				Session.set "poll_id", result unless error
+				alert error if error
+				
+	
 			new_poll_options.find().forEach (option)-> new_poll_options.remove option._id
 			new_poll_options.insert(blank: true) for x in [0...NEW_POLL_DEFAULT_OPTIONS] # copied code from above - move to function			
-			
-			$("#poll_created").toggle()			
-					
+
+			$("#poll_created").toggle()
+
 
 	Template.CreatePollOption.events
 		# Whenever a key is pressed, check to make sure another slot doesn't needed to be added
@@ -101,6 +97,8 @@ if Meteor.isClient
 			blank_poll_options = new_poll_options.find blank: true
 			if blank_poll_options.count() == 0
 				new_poll_options.insert blank: true 
+				
+				
 
 
 	Template.Vote.events
@@ -113,18 +111,24 @@ if Meteor.isClient
 				alert "You must select an option in order to vote" 
 				return 
 			
+			options = []
 			selected_options.each (index, option)->
-				option_id = $(option).val()
-				poll_options.update option_id, {$inc: {votes: 1}}
-				
-			# send user to results page
-			Router.go "Results", _id: template.data.id
+				options.push {id: $(option).val()}
+
+			Meteor.call "vote", options
+			Router.go "Results", _id: this.poll()._id
 		
 		
 	# update pie chart with contents of cursor parameter
 	update_results_graph = (cursor)->
 		canvas = $("canvas")[0]
-		ctx = canvas.getContext "2d"
+		ctx = canvas?.getContext "2d"
+
+		# this is ok, it will be called again
+		unless ctx
+			return
+			
+
 		window.ctx = ctx
 	
 		data_total = cursor.fetch().map((option)->option.votes).reduce (t,s)->t+s
@@ -155,7 +159,6 @@ if Meteor.isClient
 				ctx.moveTo(center_x + radius, center_y)
 			else
 				ctx.moveTo(center_x, center_y)
-				
 			ctx.arc(center_x, center_y, radius, start_radians, end_radians)
 			ctx.closePath()
 
@@ -174,16 +177,38 @@ if Meteor.isClient
 	# set up a callback when the canvas template is rendered to keep pie chart up-to-date	
 	Template.canvas.rendered = ->
 		
-		update_results_graph poll_options.find()
+		update_results_graph poll_options_collection.find()
 		# when poll_options change, update the pie chart
-		poll_options.find().observe
+		poll_options_collection.find().observe
 			changed: ->
-				update_results_graph poll_options.find()
+				update_results_graph poll_options_collection.find()
 		
 	# boilerplate to use username instead of email
 	Accounts.ui.config
 	  passwordSignupFields: "USERNAME_ONLY"
 	
+
+Meteor.methods
+	create_poll: (poll_name, options)->
+		
+		# Insert new poll
+		new_poll_id = polls.insert 
+			name: poll_name
+			user_id: @userId
+			
+		
+		options.map (option)-> 
+			poll_options_collection.insert {poll: new_poll_id, value: option.value, votes: 0} if option.value
+		
+		new_poll_id
+		
+	
+	vote: (options)->
+		ids = options.map (option)->option.id
+		poll_options_collection.update {_id: {$in: ids}},
+			{$inc: {votes: 1}},
+			{multi: true}
+		
 
 if Meteor.isServer
 	
@@ -200,7 +225,7 @@ if Meteor.isServer
 		
 	# get all poll options for a single poll
 	Meteor.publish "poll_options", (poll_id)->
-		poll_options.find(poll: poll_id)
+		poll_options_collection.find(poll: poll_id)
 		
 	Meteor.publish "users", ->
 		Meteor.users.find()
