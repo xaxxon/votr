@@ -18,12 +18,10 @@ Router.map ->
 			[Meteor.subscribe("poll", this.params._id), Meteor.subscribe("poll_options", this.params._id), Meteor.subscribe("users")]
 		data: ->
 			if this.ready()
-				poll = polls.findOne(this.params._id)				
-				id: this.params._id
+				poll = polls.findOne(this.params._id)			
 				poll_options: poll_options.find(poll: this.params._id)
-				poll: poll
-				username: Meteor.users.findOne(poll.user_id)?.username or "anonymous"
-			
+				poll: -> poll
+				username: -> Meteor.users.findOne(poll.user_id)?.username or "anonymous"
 
 	this.route "Results",
 		path: "/results/:_id"
@@ -33,11 +31,9 @@ Router.map ->
 		data: ->
 			if this.ready()
 				poll = polls.findOne(this.params._id)
-				
-				# id: this.params._id
-				poll: poll
-				poll_options: poll_options.find(poll: this.params._id)
-				username: Meteor.users.findOne(poll.user_id)?.username or "anonymous"
+				poll: -> poll
+				poll_options: -> poll_options.find(poll: this.params._id)
+				username: -> Meteor.users.findOne(poll.user_id)?.username or "anonymous"
 
 if Meteor.isClient
 
@@ -49,9 +45,9 @@ if Meteor.isClient
 
 
 	Template.Polls.helpers
-		polls: polls.find()
-		empty_poll_list: polls.find().count() == 0
-		anonymous: Meteor.userId() == null
+		anonymous: -> Meteor.userId() == null
+		polls: -> polls.find()
+		empty_poll_list: -> polls.find().count() == 0
 		
 	Template.PollSummary.events
 		"click .remove": -> polls.remove @_id if confirm "This poll is about to be deleted"

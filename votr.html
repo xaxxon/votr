@@ -94,7 +94,7 @@
 
 <template name='Vote'>
 	
-	<div>name: {{poll.name}}, id: {{id}} user: {{poll.user_id}} name: {{username}}</div>
+	<div>name: {{poll.name}}, id: {{poll._id}} user: {{poll.user_id}} name: {{username}}</div>
 	
 	<form id='vote'>
 	{{#each poll_options}}
