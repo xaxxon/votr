@@ -114,7 +114,7 @@
 
 
 <template name='Results'>
-	<div>name: {{poll.name}}, id: {{id}} user: {{poll.user_id}}</div>
+	<div>name: {{poll.name}}, id: {{poll._id}} user: {{poll.user_id}}</div>
 	
 	{{#each poll_options}}
 		{{>ResultOption}}

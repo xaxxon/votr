@@ -23,8 +23,6 @@ Router.map ->
 				poll_options: poll_options.find(poll: this.params._id)
 				poll: poll
 				username: Meteor.users.findOne(poll.user_id)?.username or "anonymous"
-			else
-				console.log "results data not ready"
 			
 
 	this.route "Results",
@@ -34,15 +32,12 @@ Router.map ->
 			[Meteor.subscribe("poll", this.params._id), Meteor.subscribe("poll_options", this.params._id), Meteor.subscribe("users")]
 		data: ->
 			if this.ready()
-				console.log "results data ready"
 				poll = polls.findOne(this.params._id)
 				
-				id: this.params._id
-				poll_options: poll_options.find(poll: this.params._id)
+				# id: this.params._id
 				poll: poll
+				poll_options: poll_options.find(poll: this.params._id)
 				username: Meteor.users.findOne(poll.user_id)?.username or "anonymous"
-			else
-				console.log "results data not ready"
 
 if Meteor.isClient
 
@@ -77,10 +72,8 @@ if Meteor.isClient
 			event.preventDefault()
 			
 			poll_name = $("#poll_name").val()
-			console.log Meteor.userId()
 			
 			# Insert new poll
-			console.log "user_id of new poll set to: " + Meteor.userId()
 			new_poll_id = polls.insert 
 				name: poll_name
 				user_id: Meteor.userId()
@@ -126,7 +119,7 @@ if Meteor.isClient
 			
 			selected_options.each (index, option)->
 				option_id = $(option).val()
-				console.log poll_options.update option_id, {$inc: {votes: 1}}
+				poll_options.update option_id, {$inc: {votes: 1}}
 				
 			# send user to results page
 			Router.go "Results", _id: template.data.id
