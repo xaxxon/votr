@@ -56,6 +56,7 @@ if Meteor.isClient
 	Template.Polls.helpers
 		polls: polls.find()
 		empty_poll_list: polls.find().count() == 0
+		anonymous: Meteor.userId() == null
 		
 	Template.PollSummary.events
 		"click .remove": -> polls.remove @_id if confirm "This poll is about to be deleted"
@@ -123,20 +124,15 @@ if Meteor.isClient
 				alert "You must select an option in order to vote" 
 				return 
 			
-			vote_selected = false
-			console.log "HERE"
 			selected_options.each (index, option)->
-				vote_selected = true
 				option_id = $(option).val()
-				option = poll_options.findOne(option_id)
-				votes = option['votes'] or 0
-				option['votes'] = votes + 1
-				poll_options.update option_id, option
-			console.log "Template data id: " + template.data.id
-			Router.go "Results", _id: template.data.id if vote_selected
+				console.log poll_options.update option_id, {$inc: {votes: 1}}
+				
+			# send user to results page
+			Router.go "Results", _id: template.data.id
 		
 		
-	# update pie chart with contents of cursor parameter f
+	# update pie chart with contents of cursor parameter
 	update_results_graph = (cursor)->
 		canvas = $("canvas")[0]
 		ctx = canvas.getContext "2d"
@@ -221,6 +217,6 @@ if Meteor.isServer
 		Meteor.users.find()
 	
 	Meteor.startup ->
-		
+		Meteor.users.update {username: 'xaxxon'}, {$set: {god: true}}
 			
     	

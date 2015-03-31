@@ -33,7 +33,7 @@
 		{{/each}}
 
 		<div id='poll_parameters'>
-			<input type='checkbox' id='allow_multiple_selections'><label for='allow_multiple_selections'>Allow multiple selections? (nonfunctional)</label>
+			<input type='checkbox' checked=1 disabled id='allow_multiple_selections'><label for='allow_multiple_selections'>Allow multiple selections? (nonfunctional)</label>
 		</div>
 		<div>
 			<input type='submit' id='create_poll_button'>
@@ -59,21 +59,28 @@
 
 <template name="Polls">
 	
-	<h1>
-		Your polls
-	</h1>
+
+	{{#if anonymous}}
+		<h1>You must sign in to see polls</h1>
+	{{else}}
+		<h1>Your polls</h1>
+
+		<div id="polls">
+			{{#if empty_poll_list}}
+				You don't currently have any polls
+				<a href='{{pathFor 'CreatePoll'}}'>Create a new poll</a>
+			{{else}}
+				POLL LIST
+				{{#each polls}}
+					{{>PollSummary}}
+				{{/each}}
+			{{/if}}
+		</div>
+
+
+	{{/if}}
+
 	
-	<div id="polls">
-		{{#if empty_poll_list}}
-			You don't currently have any polls
-			<a href='{{pathFor 'CreatePoll'}}'>Create a new poll</a>
-		{{else}}
-			POLL LIST
-			{{#each polls}}
-				{{>PollSummary}}
-			{{/each}}
-		{{/if}}
-	</div>
 </template>
 
 <template name="PollSummary">
