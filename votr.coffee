@@ -121,7 +121,51 @@ if Meteor.isClient
 
 			Meteor.call "vote", options
 			Router.go "Results", _id: this.poll()._id
+	
+	# getting distinct colors is actually a fairly complex thing, simple euclidian distance isn't good enough.
+	#   There's a bunch of good links here: http://stackoverflow.com/questions/13586999/color-difference-similarity-between-two-values-with-js
+	get_random_color = ->
+		red = Math.floor(Math.random() * 256);
+		green = Math.floor(Math.random() * 256);
+		blue = Math.floor(Math.random() * 256);
 		
+		# check colors to see if we're not too close
+		# color = "rgb(#{red}#,#{green},#{blue})"
+		# console.log color
+		# color
+		[red, green, blue]
+		
+	colors = []
+	minimum_delta_e = 30
+	delta_e = new DeltaE()
+	max_attempts = 100
+	
+	# This is the bogosort of good color finders
+	get_distinct_color = ->
+		attempts = 0
+		# store a decent color just in case - not too close to neighbor
+		worst_case_color = false
+		loop
+			rgb = get_random_color()
+			if ++attempts > max_attempts or colors.length == 0
+				console.log "FAILED to find a distinct color but WCC: #{worst_case_color}" unless colors.length == 0
+				rgb = worst_case_color or rgb
+				colors.push rgb
+				return "rgb(#{rgb[0]},#{rgb[1]},#{rgb[2]})" 
+			
+			found_another_color_too_close = false
+			for color in colors 
+				# have to make it easier as more colors are added or they will all fail the test for higher delta-e's
+				if (de = delta_e.getDeltaE00FromRGB(rgb, color)) < minimum_delta_e - colors.length / 2
+					found_another_color_too_close = true
+					worst_case_color = rgb if delta_e.getDeltaE00FromRGB(rgb, colors[-1..][0]) > minimum_delta_e
+					break
+			
+			unless found_another_color_too_close
+				colors.push rgb
+				return "rgb(#{rgb[0]},#{rgb[1]},#{rgb[2]})"
+			
+
 		
 	# update pie chart with contents of cursor parameter
 	update_results_graph = (cursor)->
@@ -166,7 +210,7 @@ if Meteor.isClient
 			ctx.arc(center_x, center_y, radius, start_radians, end_radians)
 			ctx.closePath()
 
-			ctx.fillStyle = '#'+Math.floor(Math.random()*16777215).toString(16)
+			ctx.fillStyle = get_distinct_color()# get_random_color()
 			ctx.fill()
 
 
@@ -190,6 +234,9 @@ if Meteor.isClient
 	# boilerplate to use username instead of email
 	Accounts.ui.config
 	  passwordSignupFields: "USERNAME_ONLY"
+
+
+
 	
 
 Meteor.methods
