@@ -5,9 +5,6 @@
 <body>
 <h1 class='title'>VOTR</h1>
 
-<div id='login'>
-	{{> loginButtons}}
-</div>
 
 <div id='menubar'>
 	<div class='menu_option'>
@@ -16,6 +13,7 @@
 	<div class='menu_option'>
 		<a href="{{pathFor 'Polls'}}">Polls</a>
 	</div>
+	{{>Account}}
 </div>
 
 
@@ -130,15 +128,58 @@
 
 
 <template name='canvas'>
-	<div class="container">
-		<canvas id="results">Your browser does not support HTML5 Canvas. Please update your browser to the latest version.</canvas>
+	<div id="results-pie-chart" class='kineticjs-container'>
 	</div>	
 </template>
 
 <template name='loading'>
 	<div class='overlay'>
 		<div class='message centered'>
-		    Loading
+		    Loading 
 		</div>
+	</div>
+</template>
+
+
+<template name='Account'>
+    <div id='account_placeholder'>
+		sign-in
+	</div>
+	{{>Login}}
+	{{>CreateUser}}
+</template> 
+
+<template name='Login'>
+	<div id='login'>
+		<form id='login_form'>
+			<input type='text' id='login_username' placeholder='Username'>
+			<input type='password' id='login_password'>
+			<input type='submit'>
+		</form>
+		<div id='account_switch_to_create_user'>
+			create account
+		</div>
+		{{>AccountCancel}}
+	</div>
+</template>
+
+<template name='CreateUser'>
+	<div id='create_user'>
+		<form id='create_user_form'>
+			<input type='text' id='create_user_username' placeholder='username'>
+			<input type='password' id='create_user_password'>
+			<input type='password' id='create_user_confirm_password'>
+			<input type='submit'>
+		</form>
+		<div id='account_switch_to_login'>
+			login
+		</div>
+		{{>AccountCancel}}
+	</div>
+</template>
+
+<template name='AccountCancel'>
+	<div id='account_cancel'>
+		cancel
 	</div>
 </template>

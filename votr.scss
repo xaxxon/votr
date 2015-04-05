@@ -19,9 +19,8 @@
 	margin-top: 5px;
 }
 
-canvas.results {
-	width: 200;
-	height: 200;
+#results {
+	float: right;
 }
 
 .remove {
@@ -32,6 +31,11 @@ canvas.results {
     font-size: 59px;
     font-family: 'Sigmar One',sans-serif;
 	float: left;
+}
+
+div#kinetic {
+	width: 1000;
+	height: 1000;
 }
 
 .overlay {
@@ -62,9 +66,6 @@ canvas.results {
 	padding: 20px;
 }
 
-#login {
-	float: left;
-}
 
 #menubar {
 	clear: both;
@@ -73,4 +74,31 @@ canvas.results {
 .menu_option {
 	float: left;
 	padding-right: 10px;
+}
+
+div#results-pie-chart.kineticjs-container {
+	float: right;
+}
+
+
+#login {
+	display: none;
+	border: 1px solid black;
+	padding: 5px;
+	overflow: auto;
+	input {
+		float: left;
+		clear: left;
+	}
+}
+
+#create_user {
+	display: none;
+	border: 1px solid black;
+	overflow: auto;
+	
+	input {
+		float: left;
+		clear: left;
+	}
 }

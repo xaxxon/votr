@@ -169,24 +169,20 @@ if Meteor.isClient
 		
 	# update pie chart with contents of cursor parameter
 	update_results_graph = (cursor)->
-		canvas = $("canvas")[0]
-		ctx = canvas?.getContext "2d"
-
-		# this is ok, it will be called again
-		unless ctx
-			return
-			
-
-		window.ctx = ctx
+		stage = new Kinetic.Stage
+			container: 'results-pie-chart'
+			height: 300
+			width: 300
+		layer = new Kinetic.Layer()
 	
 		data_total = cursor.fetch().map((option)->option.votes).reduce (t,s)->t+s
 		
 		previous_sum = 0
 		
 		# this should all be parameterized to make this more useful
-		center_x = 50
-		center_y = 50
-		radius = 45
+		center_x = 105
+		center_y = 105
+		radius = 70
 
 
 		# skip options with no votes so it doesn't draw radius lines for them
@@ -200,44 +196,112 @@ if Meteor.isClient
 
 			start_radians = start_percent * 2 * Math.PI
 			end_radians = finish_percent * 2 * Math.PI
+			
+			degrees = value / data_total * 360
+			rotation = previous_sum / data_total * 360
 
-			ctx.beginPath()
-			# if there's only one option, don't draw radius lines, just a full circle
-			if value == data_total
-				ctx.moveTo(center_x + radius, center_y)
-			else
-				ctx.moveTo(center_x, center_y)
-			ctx.arc(center_x, center_y, radius, start_radians, end_radians)
-			ctx.closePath()
+			wedge = new Kinetic.Wedge
+		        x: stage.width() / 2
+		        y: stage.height() / 2
+		        radius: radius
+		        angle: degrees
+		        fill: get_distinct_color()
+		        stroke: 'black'
+		        strokeWidth: 4
+		        rotation: rotation
+				
+			do (wedge)->
+				wedge.on 'mouseenter', ->
+					@animation?.stop() # stop the previous animation if it exists
+					@animation = new Kinetic.Animation wedge_animator({wedge: wedge, start_radius: wedge.getRadius(), end_radius: 90, duration: 250}), layer
+					@animation.start()
+		
+		
+			do (wedge)->
+				wedge.on 'mouseleave', ->
+					@animation?.stop() # stop the previous animation if it exists
+					@animation = new Kinetic.Animation wedge_animator({wedge: wedge, start_radius: wedge.getRadius(), end_radius: radius, duration: 250}), layer
+					@animation.start()	
+			
 
-			ctx.fillStyle = get_distinct_color()# get_random_color()
-			ctx.fill()
-
-
-			ctx.lineWidth = 3;
-			# ctx.strokeStyle = '#'+Math.floor(Math.random()*16777215).toString(16)
-			ctx.stroke()
-
+			layer.add wedge
+			
 
 			previous_sum += value
+
+		stage.add layer
+	
+	
+	
+	# takes parameters:
+	#   wedge
+	#   start_radius
+	#   end_radius
+	#   duration (in milliseconds)
+	wedge_animator = (data)->
+		do (data)->
+			(frame)->
+				radius = data.start_radius + ((data.end_radius - data.start_radius) * ((if frame.time < data.duration then frame.time else data.duration)) / data.duration)
+				data.wedge.setRadius radius
+				@stop() if frame.time > data.duration
 	
 		
 	# set up a callback when the canvas template is rendered to keep pie chart up-to-date	
 	Template.canvas.rendered = ->
 		
-		update_results_graph poll_options_collection.find()
+		update_results_graph poll_options_collection.find()			
+			
 		# when poll_options change, update the pie chart
 		poll_options_collection.find().observe
 			changed: ->
 				update_results_graph poll_options_collection.find()
+				
 		
-	# boilerplate to use username instead of email
-	Accounts.ui.config
-	  passwordSignupFields: "USERNAME_ONLY"
+		
+	Template.Login.events =
+		'submit #login': (event, template)->
+			event.preventDefault()
+			username = $('#login_username').val()
+			password = $('#login_password').val()
+			
+			
+			Meteor.loginWithPassword username, password, (result)-> console.log "not checking login return value"; console.log result
+		'click #account_switch_to_create_user': (event, template)->
+			$('#login').toggle()
+			$('#create_user').toggle()
+			
+			
+	Template.CreateUser.events =
+		'submit #create_user': (event, template)->
+			event.preventDefault()
+			
+			username = $('#create_user_username').val()
+			password = $('#create_user_password').val()
+			confirm_password = $('create_user_confirm_password').val()
+			console.log "not checking password match yet: #{username} #{password}"
+			# one of: username, email
+			# password
+			Accounts.createUser 
+				username: username
+				password: password
+				(result)-> console.log "not checking create user return value"; console.log result
+				
+		'click #account_switch_to_login': (event, template)->
+			$('#login').toggle()
+			$('#create_user').toggle()
 
+	Template.Account.events =
+		'click #account_placeholder': (event, template)->
+			console.log "showing login stuff"
+			$('#account_placeholder').toggle()
+			$('#login').toggle()
 
+	Template.AccountCancel.events =
+		'click #account_cancel': (event, template)->
+			$('#account_placeholder').show()
+			$('#login').hide()
+			$('#create_user').hide()
 
-	
 
 Meteor.methods
 	create_poll: (poll_name, options)->
@@ -272,6 +336,11 @@ Meteor.methods
 
 if Meteor.isServer
 			
+	# Accounts.validateNewUser (user)->
+	# 	console.log user
+	# 	throw new Meteor.Error 403, "forced failure in validateNewUser callback"
+				
+			
 	isGod = (user_id)->
 		Meteor.users.findOne(user_id)?.god
 			
@@ -295,7 +364,7 @@ if Meteor.isServer
 		Meteor.users.find()
 	
 	Meteor.startup ->
-		Meteor.users.update {username: 'xaxxon'}, {$set: {god: true}}
+		Meteor.users.update {username: 'admin'}, {$set: {god: true}}
 			
 
 	polls.before.insert (userId, doc)->
@@ -305,3 +374,10 @@ if Meteor.isServer
   	  doc.createdAt = Date.now()
 	  
 
+	Accounts.validateNewUser (user)->
+		console.log "validateNewUser"
+		console.log user
+		true
+
+2
+	

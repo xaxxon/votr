@@ -9,6 +9,7 @@ coffeescript
 jquery
 fourseven:scss
 iron:router
-accounts-ui
 accounts-password
 matb33:collection-hooks
+brentjanderson:kinetic.js
+accounts-base
