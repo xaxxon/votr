@@ -1,4 +1,6 @@
 
+@import 'css/lib/mixins';
+
 .poll {
 	background-color: pink;
 
@@ -80,25 +82,3 @@ div#results-pie-chart.kineticjs-container {
 	float: right;
 }
 
-
-#login {
-	display: none;
-	border: 1px solid black;
-	padding: 5px;
-	overflow: auto;
-	input {
-		float: left;
-		clear: left;
-	}
-}
-
-#create_user {
-	display: none;
-	border: 1px solid black;
-	overflow: auto;
-	
-	input {
-		float: left;
-		clear: left;
-	}
-}

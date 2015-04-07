@@ -1,0 +1,58 @@
+
+
+<!-- Overarching template for everything account releated -->
+<template name='Account'>
+	{{>AccountStatus}}
+	{{>Login}}
+	{{>CreateUser}}
+</template> 
+
+<!-- This template is shown when the user is not in the process of logging in/out or creating an account -->
+<template name='AccountStatus'>
+	<div id='account_status'>
+		{{#if currentUser}}
+		    {{currentUser.username}} <div id='log_out' class='text_button '>log out</div>
+		{{ else }}
+			<div id='sign_in' class='account_text_button'>sign-in</div>
+		{{/if}}
+		
+	</div>
+</template>
+
+<!-- Login to an existing account -->
+<template name='Login'>
+	<div id='login'>
+		<form id='login_form'>
+			<input type='text' id='login_username' placeholder='username'>
+			<input type='password' id='login_password' placeholder='password'>
+			<input type='submit'>
+		</form>
+		<div id='account_switch_to_create_user' class='account_text_button'>
+			create account
+		</div>
+		{{>AccountCancel}}
+	</div>
+</template>
+
+<!-- Create a new account -->
+<template name='CreateUser'>
+	<div id='create_user'>
+		<form id='create_user_form'>
+			<input type='text' id='create_user_username' placeholder='username'>
+			<input type='password' id='create_user_password' placeholder='password'>
+			<input type='password' id='create_user_confirm_password' placeholder='confirm password'>
+			<input type='submit'>
+		</form>
+		<div id='account_switch_to_login' class='account_text_button'>
+			login
+		</div>
+		{{>AccountCancel}}
+	</div>
+</template>
+
+<!-- Cancel an account activity -->
+<template name='AccountCancel'>
+	<div id='account_cancel' class='account_text_button'>
+		cancel
+	</div>
+</template>

@@ -256,51 +256,6 @@ if Meteor.isClient
 			changed: ->
 				update_results_graph poll_options_collection.find()
 				
-		
-		
-	Template.Login.events =
-		'submit #login': (event, template)->
-			event.preventDefault()
-			username = $('#login_username').val()
-			password = $('#login_password').val()
-			
-			
-			Meteor.loginWithPassword username, password, (result)-> console.log "not checking login return value"; console.log result
-		'click #account_switch_to_create_user': (event, template)->
-			$('#login').toggle()
-			$('#create_user').toggle()
-			
-			
-	Template.CreateUser.events =
-		'submit #create_user': (event, template)->
-			event.preventDefault()
-			
-			username = $('#create_user_username').val()
-			password = $('#create_user_password').val()
-			confirm_password = $('create_user_confirm_password').val()
-			console.log "not checking password match yet: #{username} #{password}"
-			# one of: username, email
-			# password
-			Accounts.createUser 
-				username: username
-				password: password
-				(result)-> console.log "not checking create user return value"; console.log result
-				
-		'click #account_switch_to_login': (event, template)->
-			$('#login').toggle()
-			$('#create_user').toggle()
-
-	Template.Account.events =
-		'click #account_placeholder': (event, template)->
-			console.log "showing login stuff"
-			$('#account_placeholder').toggle()
-			$('#login').toggle()
-
-	Template.AccountCancel.events =
-		'click #account_cancel': (event, template)->
-			$('#account_placeholder').show()
-			$('#login').hide()
-			$('#create_user').hide()
 
 
 Meteor.methods
@@ -310,8 +265,8 @@ Meteor.methods
 		new_poll_id = polls.insert 
 			name: poll_name
 			user_id: @userId
-			
-		
+
+
 		options.map (option)-> 
 			poll_options_collection.insert {poll: new_poll_id, value: option.value, votes: 0} if option.value
 		
@@ -373,11 +328,16 @@ if Meteor.isServer
   	poll_options_collection.before.insert (userId, doc)->
   	  doc.createdAt = Date.now()
 	  
-
+	# http://docs.meteor.com/#/full/accounts_validatenewuser
+	# how to fail new user creation (or return false)
+	# throw new Meteor.Error(403, "Message");
 	Accounts.validateNewUser (user)->
 		console.log "validateNewUser"
 		console.log user
-		true
+		throw new Meteor.Error 403, "Username may not be 'b'" if user.username == 'b'
 
-2
+	# http://docs.meteor.com/#/full/accounts_validateloginattempt
+	# not necessary for checking password
+	# Accounts.validateLoginAttempt (options)->
+		
 	
