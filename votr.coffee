@@ -1,127 +1,10 @@
 
 
-NEW_POLL_DEFAULT_OPTIONS = 4
-
-polls = new Mongo.Collection "polls"
-poll_options_collection = new Mongo.Collection "poll_options"
 
 
-
-Router.map ->
-	this.route "CreatePoll", path: "/" # default landing page is for creating a new poll
-	this.route "Polls", # list all the polls
-		waitOn: ->
-			Meteor.subscribe "polls"
-	this.route "Vote", # show details about a single poll
-		path: "/vote/:_id"
-		loadingTemplate: "loading"
-		waitOn: ->
-			[Meteor.subscribe("poll", this.params._id), Meteor.subscribe("poll_options", this.params._id), Meteor.subscribe("users")]
-		data: ->
-			if this.ready()
-				poll = polls.findOne(this.params._id)
-				
-				# => needed to maintain 'this'
-				poll_options: => poll_options_collection.find(poll: this.params._id)
-				poll: -> poll
-				username: -> Meteor.users.findOne(poll.user_id)?.username or "anonymous"
-
-	this.route "Results",
-		path: "/results/:_id"
-		loadingTemplate: "loading"
-		waitOn: ->
-			[Meteor.subscribe("poll", this.params._id), Meteor.subscribe("poll_options", this.params._id), Meteor.subscribe("users")]
-		data: ->
-			if this.ready
-				poll = polls.findOne(this.params._id)
-
-				# => needed to maintain 'this'
-				poll_options: => poll_options_collection.find poll: this.params._id
-				poll: -> poll
-				username: -> Meteor.users.findOne(poll.user_id)?.username or "anonymous"
 
 if Meteor.isClient
 
-	# make it so the database handles are available in the browser console
-	# because coffeescript hides variables outside their scope
-	window.polls = polls
-	window.poll_options = poll_options_collection
-	window.users = Meteor.users
-
-
-	Template.Polls.helpers
-		anonymous: -> Meteor.userId() == null
-		polls: -> polls.find()
-		empty_poll_list: -> polls.find().count() == 0
-		
-	Template.PollSummary.events
-		"click .remove": -> Meteor.call "remove_poll", {id: @_id} if confirm "This poll is about to be deleted"
-		
-		
-		# polls.remove @_id if confirm "This poll is about to be deleted"
-
-
-	# This code should be moved into something that only happens when showing the template
-	#   for creating a new poll, but I'm not sure how to do that yet
-	# Create local collection to stop options
-	new_poll_options = new Meteor.Collection(null)
-	new_poll_options.insert(blank: true) for x in [0...NEW_POLL_DEFAULT_OPTIONS]
-
-	Template.CreatePoll.helpers 
-		options: -> new_poll_options.find()
-		poll_link: -> Router.path "Vote", _id: Session.get "poll_id"
-
-	Template.CreatePoll.events
-		"submit #create_poll": (event)->
-			event.preventDefault()
-			
-			poll_name = $("#poll_name").val()
-			
-			options = ({value: option.value} for option in new_poll_options.find().fetch())
-				
-			Meteor.call "create_poll", poll_name, options, (error, result)->
-				Session.set "poll_id", result unless error
-				alert error if error
-				
-	
-			new_poll_options.find().forEach (option)-> new_poll_options.remove option._id
-			new_poll_options.insert(blank: true) for x in [0...NEW_POLL_DEFAULT_OPTIONS] # copied code from above - move to function			
-
-			$("#poll_created").toggle()
-
-
-	Template.CreatePollOption.events
-		# Whenever a key is pressed, check to make sure another slot doesn't needed to be added
-		"keyup .poll_option": (event)->
-			text = event.target.value
-
-			new_poll_options.update @_id, value: text, blank: text == ""
-
-			# If there are no blank slots remaining, add another one at the bottom
-			blank_poll_options = new_poll_options.find blank: true
-			if blank_poll_options.count() == 0
-				new_poll_options.insert blank: true 
-				
-				
-
-
-	Template.Vote.events
-		"submit #vote": (event, template)->
-			event.preventDefault()
-			selected_options = $(".option:checked")
-			
-			# if nothing is selected, don't do anything
-			if selected_options.length == 0
-				alert "You must select an option in order to vote" 
-				return 
-			
-			options = []
-			selected_options.each (index, option)->
-				options.push {id: $(option).val()}
-
-			Meteor.call "vote", options
-			Router.go "Results", _id: this.poll()._id
-	
 	# getting distinct colors is actually a fairly complex thing, simple euclidian distance isn't good enough.
 	#   There's a bunch of good links here: http://stackoverflow.com/questions/13586999/color-difference-similarity-between-two-values-with-js
 	get_random_color = ->
@@ -248,7 +131,8 @@ if Meteor.isClient
 		
 	# set up a callback when the canvas template is rendered to keep pie chart up-to-date	
 	Template.canvas.rendered = ->
-		
+		alert "not reimplemented"
+		return
 		update_results_graph poll_options_collection.find()			
 			
 		# when poll_options change, update the pie chart
@@ -257,87 +141,3 @@ if Meteor.isClient
 				update_results_graph poll_options_collection.find()
 				
 
-
-Meteor.methods
-	create_poll: (poll_name, options)->
-		
-		# Insert new poll
-		new_poll_id = polls.insert 
-			name: poll_name
-			user_id: @userId
-
-
-		options.map (option)-> 
-			poll_options_collection.insert {poll: new_poll_id, value: option.value, votes: 0} if option.value
-		
-		new_poll_id
-		
-	
-	vote: (options)->
-		ids = options.map (option)->option.id
-		poll_options_collection.update {_id: {$in: ids}},
-			{$inc: {votes: 1}},
-			{multi: true}
-		
-	remove_poll: (poll)->
-		id = poll.id
-		@poll = polls.findOne(poll.id) 
-		@god = Meteor.users.findOne(@userId).god
-		
-		# check to make sure the user either owns the poll or is god
-		polls.remove(id) if @userId = @poll.owner or @userId or @god
-
-
-
-if Meteor.isServer
-			
-	# Accounts.validateNewUser (user)->
-	# 	console.log user
-	# 	throw new Meteor.Error 403, "forced failure in validateNewUser callback"
-				
-			
-	isGod = (user_id)->
-		Meteor.users.findOne(user_id)?.god
-			
-	# retrieve a user's polls or all polls if god - not for security, just for convenience
-	#   since anyone is allowed to vote on any poll
-	Meteor.publish "polls", ->
-		if isGod @userId
-			polls.find()
-		else
-			polls.find(user_id: @userId) 
-		
-	# get a single poll
-	Meteor.publish "poll", (poll_id)->
-		polls.find(poll_id)
-		
-	# get all poll options for a single poll
-	Meteor.publish "poll_options", (poll_id)->
-		poll_options_collection.find(poll: poll_id)
-		
-	Meteor.publish "users", ->
-		Meteor.users.find()
-	
-	Meteor.startup ->
-		Meteor.users.update {username: 'admin'}, {$set: {god: true}}
-			
-
-	polls.before.insert (userId, doc)->
-	  doc.createdAt = Date.now()
-	  
-  	poll_options_collection.before.insert (userId, doc)->
-  	  doc.createdAt = Date.now()
-	  
-	# http://docs.meteor.com/#/full/accounts_validatenewuser
-	# how to fail new user creation (or return false)
-	# throw new Meteor.Error(403, "Message");
-	Accounts.validateNewUser (user)->
-		console.log "validateNewUser"
-		console.log user
-		throw new Meteor.Error 403, "Username may not be 'b'" if user.username == 'b'
-
-	# http://docs.meteor.com/#/full/accounts_validateloginattempt
-	# not necessary for checking password
-	# Accounts.validateLoginAttempt (options)->
-		
-	
