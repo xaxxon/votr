@@ -2,7 +2,7 @@
 
 
 Template.PollSummary.events
-	"click .remove": -> Meteor.call "remove_poll", {id: @_id} if confirm "This poll is about to be deleted"
+	"click .remove": -> Meteor.call "remove_poll", @_id if confirm "This poll is about to be deleted"
 	
 
 # Create local collection to store options
@@ -66,14 +66,11 @@ Template.Vote.events
 # set up a callback when the canvas template is rendered to keep pie chart up-to-date	
 Template.canvas.rendered = ->
 	pie = new PieChart $('#results_pie_chart')[0]
-	pie2 = new PieChart $('#results_pie_chart2')[0]
-	pie.update_results_graph poll_collection.findOne().options.map (option)->{name: option.name, value: option.votes}
-	pie2.update_results_graph poll_collection.findOne().options.map (option)->{name: option.name, value: option.votes}
+	pie.update_results_graph poll_collection.findOne().options.map (option)->{name: option.value, value: option.votes}
 	
 	# when poll_options change, update the pie chart
 	poll_collection.find().observe
 		changed: ->
-			pie.update_results_graph poll_collection.findOne().options.map (option)->{name: option.name, value: option.votes}
-			pie2update_results_graph poll_collection.findOne().options.map (option)->{name: option.name, value: option.votes}
+			pie.update_results_graph poll_collection.findOne().options.map (option)->{name: option.value, value: option.votes}
 		
 

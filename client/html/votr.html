@@ -1,0 +1,146 @@
+<head>
+  <title>votr</title>
+</head>
+
+<body>
+<h1 class='title'>VOTR</h1>
+
+
+<div id='menubar'>
+	<div class='menu_option'>
+		<a href="{{pathFor 'CreatePoll'}}">Votr</a>
+	</div>
+	<div class='menu_option'>
+		<a href="{{pathFor 'Polls'}}">Polls</a>
+	</div>
+	<!-- {{>Account}} -->
+</div>
+
+
+</body>
+
+
+<template name="CreatePoll">
+	<h1>Create a new poll</h1>
+
+	<form id='create_poll'>
+		<label for='poll_name'>Name:</label><input type='text' id='poll_name'>
+
+		{{#each options}}
+			{{>CreatePollOption}}
+		{{/each}}
+
+		<div>
+			<input type='submit' id='create_poll_button'>
+		</div>
+
+	</form>
+
+	<div id='poll_created' class='overlay'>
+		<div class='message centered'>
+		    Poll created <a href='{{poll_link}}'>{{poll_link}}</a>
+		</div>
+	</div>
+
+</template>
+
+
+<template name='CreatePollOption'>
+	<div class='create_poll_option'>
+		<input type='text' class='poll_option' placeholder='Enter poll option...'>
+	</div>
+</template>
+
+
+<template name="Polls">
+	
+
+	{{#if userId}}
+		<h1>You must sign in to see polls</h1>
+	{{else}}
+		<!-- <h1>Your polls</h1> -->
+
+		<div id="polls">
+			{{#if empty_poll_list}}
+				You don't currently have any polls
+				<a href='{{pathFor 'CreatePoll'}}'>Create a new poll</a>
+			{{else}}
+				POLL LIST
+				{{#if polls}}
+				{{#each polls}}
+					{{>PollSummary}}
+				{{/each}}
+				{{else}}
+					<div>No polls</div>
+				{{/if}}
+			{{/if}}
+		</div>
+
+
+	{{/if}}
+
+	
+</template>
+
+<template name="PollSummary">
+	<div class='poll'>
+		{{#if owner}}
+			<p class='remove'>X</p> 
+		{{/if}}	
+		name: {{name}} votes: {{total_votes}}
+		<a href="{{pathFor 'Vote' _id=this._id}}">Vote</a>
+		<a href="{{pathFor 'Results' _id=this._id}}">Results</a>
+	</div>
+</template>
+
+
+<template name='Vote'>
+	
+	<div>name: {{poll.name}}, id: {{poll._id}} user: {{poll.user_id}} name: {{username}}</div>
+	
+	<form id='vote'>
+	{{#each poll.options}}
+		{{>VoteOption}}
+	{{/each}}
+	
+	<input type='submit' value='VOTE!'>
+	</form>
+	
+</template>
+
+<template name='VoteOption'>
+<div>
+	<input type='checkbox' class='option' id='{{id}}' value={{id}}><label for='{{id}}'>{{value}}</label>
+</div>
+</template>
+
+
+<template name='Results'>
+	<div>name: {{poll.name}}, id: {{poll._id}} user: {{poll.user_id}}</div>
+	
+	{{#each poll.options}}
+		{{>ResultOption}}
+	{{/each}}
+	
+	{{>canvas}}
+</template>
+
+
+<template name='ResultOption'>
+	{{value}}: {{votes}}
+</template>
+
+
+<template name='canvas'>
+	<div id="results_pie_chart" class='kineticjs_container'></div>
+	<div id="results_pie_chart2" class='kineticjs_container'></div>
+</template>
+
+<template name='loading'>
+	<div class='overlay'>
+		<div class='message centered'>
+		    Loading 
+		</div>
+	</div>
+</template>
+
